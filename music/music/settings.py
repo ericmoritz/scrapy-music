@@ -95,8 +95,6 @@ FEED_EXPORTERS = {
     'jsonlines': 'music.exporters.JsonLDLinesItemExporter',
 }
 
-FEED_URI = os.environ.get(
-    'FEED_URI',
-    's3://eam-scrapes/%(name)s/v=1/ts=%(time)s/data.jsonlines'
-)
-FEED_FORMAT='jl'
+if 'FEED_URI' in os.environ:
+    FEED_URI = os.environ['FEED_URI']
+    FEED_FORMAT='jl'

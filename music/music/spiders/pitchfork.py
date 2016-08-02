@@ -41,6 +41,7 @@ class PitchforkSpider(scrapy.Spider):
 
                 album = items.MusicAlbum(
                     uri = _pitchfork_uri('album/{}'.format(_album_id(album_json))),
+                    name = album_json['album']['display_name'],
                     byArtist = [x['uri'] for x in artists]
                 )
                 yield album
