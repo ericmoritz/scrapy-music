@@ -8,6 +8,7 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
+import os
 
 BOT_NAME = 'music'
 
@@ -93,3 +94,9 @@ FEED_EXPORTERS = {
     'jl': 'music.exporters.JsonLDLinesItemExporter',
     'jsonlines': 'music.exporters.JsonLDLinesItemExporter',
 }
+
+FEED_URI = os.environ.get(
+    'FEED_URI',
+    's3://eam-scrapes/%(name)s/v=1/ts=%(time)s/data.jsonlines'
+)
+FEED_FORMAT='jl'
