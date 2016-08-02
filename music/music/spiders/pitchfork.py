@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from decimal import Decimal
 import scrapy
 import json
@@ -83,10 +84,16 @@ class PitchforkSpider(scrapy.Spider):
                 yield items.Review(
                     uri = review_uri,
                     url = response.urljoin(result['url']),
+                    datePublished = _date(result['timestamp']),
                     itemReviewed = _link(release['uri']),
                     reviewRating = _link(rating['uri']),
                     publisher = _link(publisher['uri'])
                 )
+
+
+def _date(x):
+    return datetime.utcfromtimestamp(x / 1000).isoformat() + 'Z'
+
 
 def _link(x):
     return {'@id': x}
