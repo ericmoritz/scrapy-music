@@ -1,0 +1,4 @@
+@prefix : <https://github.com/ericmoritz/scrapy-music#>
+
+<> a :Args ;
+  :min 650 .

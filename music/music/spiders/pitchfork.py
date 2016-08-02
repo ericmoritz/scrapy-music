@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal
 import scrapy
 import json
 import re
@@ -22,14 +23,19 @@ class PitchforkSpider(scrapy.Spider):
 
     def parse(self, response):
         data = json.loads(response.body)
+
+        publisher = items.Organization(
+            uri = "http://pitchfork.com/",
+            name = 'Pitchfork'
+        )
+
         for result in data['results']:
 
-            review_uri =  _pitchfork_uri(
-                'review/{}'.format(result['id'])
-            )
-            release_uris = frozenset()
-
             for i, album_json in enumerate(result['tombstone']['albums']):
+                review_uri =  _pitchfork_uri(
+                    'review/{}/{}'.format(result['id'],i)
+                )
+
                 artists = [
                     items.MusicGroup(
                         uri = _pitchfork_uri('artists/{}'.format(x['id'])),
@@ -42,16 +48,17 @@ class PitchforkSpider(scrapy.Spider):
                 album = items.MusicAlbum(
                     uri = _pitchfork_uri('album/{}'.format(_album_id(album_json))),
                     name = album_json['album']['display_name'],
-                    byArtist = [x['uri'] for x in artists]
+                    byArtist = [_link(x['uri']) for x in artists]
                 )
                 yield album
 
                 rating = items.Rating(
                     uri = review_uri + "#reviewRating",
-                    bestRating = 10,
+                    bestRating = 1000,
                     worstRating = 0,
-                    ratingValue = float(album_json['rating']['rating'])
+                    ratingValue = int(Decimal(album_json['rating']['rating']) * 100)
                 )
+                yield rating
 
                 labels = [
                     items.Organization(
@@ -67,15 +74,23 @@ class PitchforkSpider(scrapy.Spider):
 
                 release = items.MusicRelease(
                     uri = review_uri + '#itemReviewed/{}'.format(i),
-                    releaseOf = album['uri'],
-                    recordLabel = [l['uri'] for l in labels]
+                    releaseOf = _link(album['uri']),
+                    recordLabel = [_link(l['uri']) for l in labels]
                 )
+
+
                 yield release
                 yield items.Review(
-                    uri=review_uri,
-                    itemReviewed = release['uri'],
-                    reviewRating = rating['uri']
+                    uri = review_uri,
+                    url = response.urljoin(result['url']),
+                    itemReviewed = _link(release['uri']),
+                    reviewRating = _link(rating['uri']),
+                    publisher = _link(publisher['uri'])
                 )
+
+def _link(x):
+    return {'@id': x}
+
 
 def t(val):
     logging.info(repr(val))

@@ -1,0 +1,26 @@
+PREFIX : <http://schema.org/>
+PREFIX music: <https://github.com/ericmoritz/scrapy-music#>
+
+SELECT ?url ?albumName ?ratingValue
+WHERE 
+{
+
+  ?args a music:Args ;
+        music:min ?min .
+
+  ?review
+    a :Review ;
+    :itemReviewed [
+      :releaseOf [
+        :name ?albumName
+      ]
+    ];
+    :reviewRating [
+      :ratingValue ?ratingValue;
+    ] ;
+    :url ?url .
+
+
+    FILTER (?ratingValue > ?min)
+}
+ORDER BY DESC(?ratingValue)
