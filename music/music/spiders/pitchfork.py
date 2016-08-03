@@ -95,9 +95,15 @@ class PitchforkSpider(scrapy.Spider):
                 for x in labels:
                     yield x
 
+                year = min(
+                    unicode(x['year']).split('/')[0]
+                    for x in album_json['labels_and_years']
+                )
+
                 release = items.MusicRelease(
                     uri = review_uri + '#itemReviewed/{}'.format(i),
                     releaseOf = _link(album['uri']),
+                    datePublished = year,
                     recordLabel = [_link(l['uri']) for l in labels]
                 )
 
