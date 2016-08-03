@@ -105,7 +105,7 @@ class PitchforkSpider(scrapy.Spider):
                 yield release
                 yield items.Review(
                     uri = review_uri,
-                    url = response.urljoin(result['url']),
+                    url = "http://pitchfork.com" + result['url'],
                     datePublished = date_published,
                     itemReviewed = _link(release['uri']),
                     reviewRating = _link(rating['uri']),
