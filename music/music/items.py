@@ -42,6 +42,7 @@ class Thing(Resource):
 class CreativeWork(Thing):
     publisher = scrapy.Field() # -> Organization
     datePublished = scrapy.Field()
+    author = scrapy.Field()
 
 class Person(Thing):
     pass

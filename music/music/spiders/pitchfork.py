@@ -52,6 +52,16 @@ class PitchforkSpider(scrapy.Spider):
                     )
                 )
 
+            authors = [
+                items.Person(
+                    uri = _pitchfork_uri(x['url'].lstrip('/')),
+                    url = 'http://pitchfork.com' + x['url'],
+                    name = x['name']
+                )
+                for x in result['authors']
+            ]
+            for x in authors:
+                yield x
 
             for i, album_json in enumerate(result['tombstone']['albums']):
 
@@ -115,7 +125,8 @@ class PitchforkSpider(scrapy.Spider):
                     datePublished = date_published,
                     itemReviewed = _link(release['uri']),
                     reviewRating = _link(rating['uri']),
-                    publisher = _link(publisher['uri'])
+                    publisher = _link(publisher['uri']),
+                    author = [_link(x['uri']) for x in authors]
                 )
 
 
