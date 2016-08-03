@@ -19,7 +19,7 @@ class PitchforkSpider(scrapy.Spider):
     name = "pitchfork"
     allowed_domains = ["pitchfork.com"]
     start_urls = (
-        'http://pitchfork.com/api/v1/albumreviews/?limit=100&offset=0',
+        'http://pitchfork.com/api/v1/albumreviews/?limit=1000&offset=0',
     )
 
     def parse(self, response):
