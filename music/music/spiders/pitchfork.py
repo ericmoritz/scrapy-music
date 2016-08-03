@@ -10,7 +10,7 @@ from music import items
 
 RECORDS_NEWER_THAN=os.environ.get(
     'RECORDS_NEWER_THAN',
-    (datetime.utcnow().date() - timedelta(days=60)).isoformat()
+    (datetime.utcnow().date() - timedelta(days=2)).isoformat()
 )
 
 def _music_uri(path):
