@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import scrapy
 import json
 import re
 import logging
+import os
 from music import items
+
+RECORDS_NEWER_THAN=os.environ.get(
+    'RECORDS_NEWER_THAN',
+    (datetime.utcnow().date() - timedelta(days=60)).isoformat()
+)
 
 def _music_uri(path):
     return 'tag:eric.moritz@gmail.com,2016:music/{}'.format(path)
@@ -37,8 +43,18 @@ class PitchforkSpider(scrapy.Spider):
         )
 
         for result in data['results']:
+            date_published = _date(result['timestamp'])
+            if date_published < RECORDS_NEWER_THAN:
+                raise scrapy.exceptions.CloseSpider(
+                    "{} < {}".format(
+                        date_published,
+                        RECORDS_NEWER_THAN
+                    )
+                )
+
 
             for i, album_json in enumerate(result['tombstone']['albums']):
+
                 review_uri =  _pitchfork_uri(
                     'review/{}/{}'.format(result['id'],i)
                 )
@@ -90,7 +106,7 @@ class PitchforkSpider(scrapy.Spider):
                 yield items.Review(
                     uri = review_uri,
                     url = response.urljoin(result['url']),
-                    datePublished = _date(result['timestamp']),
+                    datePublished = date_published,
                     itemReviewed = _link(release['uri']),
                     reviewRating = _link(rating['uri']),
                     publisher = _link(publisher['uri'])
