@@ -19,11 +19,17 @@ class PitchforkSpider(scrapy.Spider):
     name = "pitchfork"
     allowed_domains = ["pitchfork.com"]
     start_urls = (
-        'http://pitchfork.com/api/v1/albumreviews/?limit=1000&offset=0',
+        'http://pitchfork.com/api/v1/albumreviews/?format=json',
     )
 
     def parse(self, response):
         data = json.loads(response.body)
+        nextPage = data.get('next')
+        if nextPage:
+            yield scrapy.Request(
+                response.urljoin(nextPage),
+                callback=self.parse
+            )
 
         publisher = items.Organization(
             uri = "http://pitchfork.com/",
