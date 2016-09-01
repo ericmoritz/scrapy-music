@@ -1,14 +1,20 @@
+#!/usr/bin/env python
 import shelve
 import os
 import sys
+from itertools import chain
 from doze import url
 import json
 import logging
 import requests
+import requests_cache
 import json
 from wsgiref.simple_server import make_server
 from webob.dec import wsgify
 from webob import Response
+import webbrowser
+
+requests_cache.install_cache()
 
 USERNAME=os.environ['USERNAME']
 PLAYLIST=os.environ['PLAYLIST']
@@ -24,22 +30,39 @@ accounts_service = url('https://accounts.spotify.com')
 spotify_service = url('https://api.spotify.com/v1')
 playlist_resource = spotify_service.users(USERNAME).playlists(PLAYLIST).tracks
 
+def lines(filenames):
+    return chain.from_iterable(
+        open(fn)
+        for fn in filenames
+    )
 
-def _spotify_get(url):
+def _spotify_get(url, *args, **kwargs):
     logging.info("Getting {}".format(url))
+    kwargs['headers'] = dict(auth_headers(), **kwargs.get('headers', {}))
     return json.loads(
         requests.get(
             str(url),
-            headers=dict(auth_headers())
+            *args, **kwargs
         ).content
     )
 
 
 def _spotify_put(url, *args, **kwargs):
-    logging.info("PUT {} with {!r}".format(url, kwargs.get('json')))
+    logging.info("PUT {} with {!r}".format(url, kwargs.get('data')))
+    kwargs['headers'] = dict(auth_headers(), **kwargs.get('headers', {}))
     r = requests.put(
         url,
-        headers=dict(auth_headers()),
+        *args, **kwargs
+    )
+    r.raise_for_status()
+    return r
+
+
+def _spotify_post(url, *args, **kwargs):
+    logging.info("POST {} with {!r}".format(url, kwargs.get('data')))
+    kwargs['headers'] = dict(auth_headers(), **kwargs.get('headers', {}))
+    r = requests.post(
+        url,
         *args, **kwargs
     )
     r.raise_for_status()
@@ -52,10 +75,11 @@ def are_tokens_still_ok():
 
 
 def io_oauth_dance():
-    logging.info("Goto {}".format(
+    webbrowser.open(str(
         accounts_service.authorize(
             client_id=CLIENT_ID,
             response_type='code',
+            scope='playlist-modify-public playlist-modify-private',
             redirect_uri=REDIRECT_URI,
         )
     ))
@@ -110,9 +134,14 @@ def io_find_album(albumName):
 while not test_tokens():
     io_oauth_dance()
 
+if len(sys.argv) > 1:
+    source = lines(sys.argv[1:])
+else:
+    source = sys.stdin
+
 album_urls = [
     album['href']
-    for line in sys.stdin
+    for line in source
     for album in io_find_album(
         json.loads(line)['fullAlbumName']
     )
@@ -124,5 +153,15 @@ tracks = [
     for track in _spotify_get(url).get('tracks', {}).get('items', [])
 ]
 
-_spotify_put(str(playlist_resource), json=[])
-print tracks
+_spotify_put(
+    str(playlist_resource),
+    data=json.dumps({'uris': []}),
+    headers={'Content-Type': 'application/json'}
+)
+
+for c in chunk(tracks, 100):
+    _spotify_post(
+        str(playlist_resource),
+        data=json.dumps({'uris': c}),
+        headers={'Content-Type': 'application/json'}
+    )
