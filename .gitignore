@@ -3,3 +3,6 @@
 .state.db
 
 cache.sqlite
+analyze/spark-*
+target/
+project/
